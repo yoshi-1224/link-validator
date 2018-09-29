@@ -1,0 +1,32 @@
+{
+    "manifest_version": 2,
+    "name": "Link validator",
+    "description": "checks all the links are working",
+    "version": "1.0.0",
+    "icons": {
+        "128": "icon.png"
+    },
+    "browser_action": {
+        "default_icon": "icon.png",
+        "default_popup": "popup.html"
+    },
+    "permissions": [
+        "activeTab"
+    ],
+    "background": {
+        "scripts": [
+            "background.js"
+        ]
+    },
+    "content_scripts": [
+        {
+            "js": [
+                "library/jquery-3.3.1.min.js"
+            ],
+            "matches": [
+                "http://*/*",
+                "https://*/*"
+            ]
+        }
+    ]
+}

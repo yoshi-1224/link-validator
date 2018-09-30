@@ -13,13 +13,18 @@
     "permissions": [
         "activeTab"
     ],
-
     "content_scripts": [
         {
             "js": [
                 "library/jquery-3.3.1.min.js"
             ],
-            "matches": [ "http://*/*", "https://*/*" ]
+            "matches": [
+                "http://*/*",
+                "https://*/*"
+            ],
+            "css": [
+                "custom_style.css"
+            ]
         }
     ]
 }

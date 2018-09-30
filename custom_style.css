@@ -1,0 +1,7 @@
+.crx_mouse_visited {
+    /* background-clip: #bcd5eb!important;
+    outline: 1px dashed #e9af6e!important; */
+    outline: 1px solid rgb(41, 128, 185) !important;
+    background-color: rgb(148, 212, 252) !important;
+    transition: 2s !important;
+}

@@ -1,78 +1,28 @@
 // debugger;
 var prevDOM = null;
 var MOUSE_VISITED_CLASSNAME = 'crx_mouse_visited';
+var anchors;
 
 function validate(parent_element) {
-    anchors_to_validate = parent_element.find("a");
-    anchors_to_validate.each(
-        function (index) {
-            var init = { redirect: "follow", cache: "no-cache", method: "HEAD" };
-            anchor_tag = $(this);
-            var url = anchor_tag.attr("href");
-            if (url === undefined)
-                return;
-            if (url.indexOf("/") === 0) // just for now, filter relative paths.
-                return;
+    anchors = parent_element.find("a");
+    // console.log("anchors.length=" + anchors.length);
+    anchors = anchors.filter(function (index) {
+        let link = $(this).attr("href");
+        // console.log(link);
+        return (link !== undefined && link.indexOf("/") !== 0);
+    });
 
-            this.anchor_tag = anchor_tag; // for binding
-            this.url = url;
+    // console.log("filtered anchors.length=" + anchors.length);
 
-            fetch(url, init).then(
-                function (response) {
-                    // console.log(this.url);
-                    // console.log(response.url);
-                    // console.log("redirected =" + response.redirected);
-                    // console.log("code=" + response.status);
-                    if (response.redirected) {
-                        // check if the redirect is just for https
-                        this.url = cleanUrl(this.url);
-                        response_url = cleanUrl(response.url);
-                        if (compareUrl(this.url, response_url))
-                            return;
-                    } else if (response.ok) {
-                        // this order is important, as some redirects will somehow
-                        // give 200 status code.
-                        return;
-                    }
+    let urls_to_validate = anchors.map(function (index) {
+        return $(this).attr("href");
+    }).get(); // get() makes it a basic array from jQuery object
 
-                    // 404, redirected to homepage etc.
-                    // TODO: method not allowed = 405, even though the link should be valid.
-                    this.anchor_tag.css("text-decoration", "line-through");
-                }.bind(this)
-            ).catch(function (response) { // network error. Note that this has nothing to do with the status code like 404
-                // here, things like ERR_NAME_NOT_RESOLVED are included as well.
-                this.anchor_tag.css("text-decoration", "line-through");
-                //TODO we need to separate above error with Mixed Content stuff.
-            }.bind(this));
-        });
-}
-
-function compareUrl(request_url, response_url) {
-    if (!request_url.lastIndexOf("/") === -1) {
-        // if there is specific file to look at, it is possible the domain changed.
-        // in that case, we only take a look at the file match.
-        request_url = request_url.slice(request.url.lastIndexOf("/") + 1);
-        response_url = response_url.slice(response.url.lastIndexOf("/") + 1);
-        // if / is not found in response_url, it will be slice(0) == no change.
-    } // otherwise, it just contains the domain
-
-    return request_url === response_url;
-}
-
-function cleanUrl(url) {
-    return stripHashTag(stripTrailingSlash(stripProtocol(url)));
-}
-
-function stripProtocol(url) {
-    return url.replace("http://", "").replace("https://", "");
-}
-
-function stripTrailingSlash(url) {
-    return url.endsWith("/") ? url.slice(0, -1) : url;
-}
-
-function stripHashTag(url) {
-    return url.lastIndexOf("#") !== -1 ? url.slice(lastIndexOf("#")+1) : url;
+    // console.log(urls_to_validate);
+    if (urls_to_validate.length === 0)
+        return;
+        
+    sendMessage(urls_to_validate);
 }
 
 function setMouseMoveHandler() {
@@ -106,6 +56,7 @@ function clickEventHandler(e) { // need to be non-anonymous function because we
     // need it later to remove this handler.
     if (prevDOM != null) {
         validate($(prevDOM));
+        // sendMessage($(prevDOM));
         removeHandlers();
     }
 }
@@ -120,6 +71,26 @@ function removeHandlers() {
     document.removeEventListener('mousemove', mouseOverHandler, false);
 }
 
+function sendMessage(urls) {
+    chrome.runtime.sendMessage({ links: urls }, function (response) {
+        console.log("message received in content.js");
+        console.log(response);
+        // for (i=0; i < response.values.length; i++) {
+        //     if (response.values[i]) {
+        //         anchor_tag.css("text-decoration", "line-through");
+        //     }
+        // }
+        console.log(anchors);
+        anchors.each(function (index) {
+            if (!response.values[index]) {
+                $(this).css("text-decoration", "line-through");
+            }
+
+        })
+
+
+    });
+}
 setMouseMoveHandler();
 setClickEvent();
 
